@@ -1,0 +1,6 @@
+{
+  "name": "Aura Boutique",
+  "description": "An elegant, production-ready, minimalist essentials e-commerce boutique featuring cryptographically secure password authentication, dynamic cart management, and a high-fidelity, interactive payment processing gateway.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
