@@ -254,13 +254,13 @@ export const INITIAL_COUPONS: Coupon[] = [
     type: 'fixed',
     value: 15,
     minSpend: 50,
-    description: 'Get $15 off on shipping & handling costs (Orders above $50).'
+    description: 'Get ৳15 off on shipping & handling costs (Orders above ৳50).'
   },
   {
     code: 'AURA20',
     type: 'fixed',
     value: 20,
     minSpend: 150,
-    description: 'Save $20 on premium cart totals above $150.'
+    description: 'Save ৳20 on premium cart totals above ৳150.'
   }
 ];

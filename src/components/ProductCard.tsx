@@ -121,11 +121,11 @@ export default function ProductCard({ product, onSelect, onAddToCartDirect }: Pr
           <div className="flex flex-col">
             {product.originalPrice && (
               <span className="text-[11px] text-slate-405 text-slate-400 line-through leading-none">
-                ${product.originalPrice}
+                ৳{product.originalPrice}
               </span>
             )}
             <span className="text-base font-black text-indigo-600 tracking-tight leading-none">
-              ${product.price}
+              ৳{product.price}
             </span>
           </div>
 

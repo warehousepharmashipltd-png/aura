@@ -48,7 +48,7 @@ export default function CartDrawer({
   if (activeCoupon) {
     if (activeCoupon.minSpend && subtotal < activeCoupon.minSpend) {
       // Deactivate coupon automatically if spend drops below minimum threshold
-      setCouponError(`Spend limit of $${activeCoupon.minSpend} required.`);
+      setCouponError(`Spend limit of ৳${activeCoupon.minSpend} required.`);
       setActiveCoupon(null);
     } else {
       if (activeCoupon.type === 'percentage') {
@@ -72,14 +72,16 @@ export default function CartDrawer({
 
     if (!code) return;
 
-    const foundCoupon = INITIAL_COUPONS.find((c) => c.code === code);
+    const couponsString = localStorage.getItem('aura_coupons');
+    const couponsList: Coupon[] = couponsString ? JSON.parse(couponsString) : INITIAL_COUPONS;
+    const foundCoupon = couponsList.find((c) => c.code === code);
     if (!foundCoupon) {
       setCouponError('This coupon is invalid.');
       return;
     }
 
     if (foundCoupon.minSpend && subtotal < foundCoupon.minSpend) {
-      setCouponError(`Min purchase of $${foundCoupon.minSpend} required.`);
+      setCouponError(`Min purchase of ৳${foundCoupon.minSpend} required.`);
       return;
     }
 
@@ -188,7 +190,7 @@ export default function CartDrawer({
                             {item.product.name}
                           </h4>
                           <span className="text-xs font-bold text-slate-900 shrink-0">
-                            ${item.product.price * item.quantity}
+                            ৳{item.product.price * item.quantity}
                           </span>
                         </div>
                         {/* Selected configuration highlights */}
@@ -307,12 +309,12 @@ export default function CartDrawer({
                 <div className="space-y-2 text-xs text-slate-500 border-b border-slate-150/40 pb-3">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
-                    <span className="font-bold text-slate-900">${subtotal}</span>
+                    <span className="font-bold text-slate-900">৳{subtotal}</span>
                   </div>
                   {discount > 0 && (
                     <div className="flex justify-between text-indigo-600 font-bold">
                       <span>Promo Savings</span>
-                      <span>-${discount}</span>
+                      <span>-৳{discount}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
@@ -320,7 +322,7 @@ export default function CartDrawer({
                     {baseShipping === 0 ? (
                       <span className="text-indigo-600 font-bold">Free S&H</span>
                     ) : (
-                      <span className="font-bold text-slate-900">${baseShipping}</span>
+                      <span className="font-bold text-slate-900">৳{baseShipping}</span>
                     )}
                   </div>
                 </div>
@@ -328,7 +330,7 @@ export default function CartDrawer({
                 {/* Grand Total */}
                 <div className="flex justify-between items-baseline pt-1">
                   <span className="text-sm font-bold text-slate-900">Total Due</span>
-                  <span className="text-xl font-black text-indigo-650 text-indigo-600">${grandTotal}</span>
+                  <span className="text-xl font-black text-indigo-650 text-indigo-600">৳{grandTotal}</span>
                 </div>
 
                 {/* Authenticated Checkout or Prompt Login */}

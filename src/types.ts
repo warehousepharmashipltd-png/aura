@@ -35,6 +35,16 @@ export interface User {
   avatarUrl: string;
   joinedDate: string;
   role: 'customer' | 'admin';
+  phoneNumber?: string;
+  deliveryAddress?: {
+    fullName: string;
+    addressLine1: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    phone: string;
+  };
 }
 
 export interface Order {
@@ -64,13 +74,16 @@ export interface Order {
     country: string;
     phone: string;
   };
-  paymentMethod: 'card' | 'paypal';
+  paymentMethod: 'card' | 'paypal' | 'bkash' | 'cod' | string;
   paymentDetails: {
     cardBrand?: string;
     last4?: string;
     paypalEmail?: string;
+    bkashNumber?: string;
+    bkashTxnId?: string;
+    codExpected?: boolean;
   };
-  status: 'processing' | 'shipped' | 'delivered';
+  status: string;
   trackingNumber: string;
 }
 

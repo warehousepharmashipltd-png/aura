@@ -29,6 +29,8 @@ import ProductDetailModal from './components/ProductDetailModal';
 import CartDrawer from './components/CartDrawer';
 import CheckoutWizard from './components/CheckoutWizard';
 import UserDashboard from './components/UserDashboard';
+import AdminPasscodeModal from './components/AdminPasscodeModal';
+import HiddenAdminPanel from './components/HiddenAdminPanel';
 
 export default function App() {
   // Products listing - state loaded from local storage if existing
@@ -75,6 +77,20 @@ export default function App() {
   const [viewingDashboard, setViewingDashboard] = useState(false);
   const [dashboardTab, setDashboardTab] = useState<'orders' | 'admin'>('orders');
 
+  // Light/Dark theme mode state
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('aura_theme');
+    return (saved === 'dark' || saved === 'light') ? saved : 'light';
+  });
+
+  const toggleTheme = () => {
+    setTheme((prev) => {
+      const next = prev === 'light' ? 'dark' : 'light';
+      localStorage.setItem('aura_theme', next);
+      return next;
+    });
+  };
+
   // Checkout math presets
   const [checkoutMath, setCheckoutMath] = useState({
     subtotal: 0,
@@ -82,6 +98,21 @@ export default function App() {
     shipping: 15,
     couponUsed: ''
   });
+
+  // Hidden executive admin modal states
+  const [isAdminPasscodeOpen, setIsAdminPasscodeOpen] = useState(false);
+  const [isHiddenAdminOpen, setIsHiddenAdminOpen] = useState(false);
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        setIsAdminPasscodeOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
 
   // Unique category extraction from listing
   const categories = ['All', ...Array.from(new Set(INITIAL_PRODUCTS.map((p) => p.category)))];
@@ -113,9 +144,6 @@ export default function App() {
     const color = product.colors[0];
     const size = product.sizes ? product.sizes[0] : undefined;
     handleAddToCart(product, 1, color, size);
-
-    // Prompt slide cart instantly for visual feedback
-    setIsCartOpen(true);
   };
 
   const handleUpdateCartQty = (idx: number, newQty: number) => {
@@ -188,10 +216,10 @@ export default function App() {
   });
 
   return (
-    <div className="min-h-screen bg-sky-50 flex flex-col font-sans antialiased text-slate-800">
+    <div className={`min-h-screen flex flex-col font-sans antialiased transition-colors duration-300 ${theme === 'dark' ? 'bg-slate-950 text-slate-100 dark' : 'bg-slate-50 text-slate-800'}`}>
       
       {/* GLOBAL BILLBOARD HEADER */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 md:px-8 py-4 transition-all print:hidden">
+      <header className={`sticky top-0 z-40 backdrop-blur-md border-b px-4 md:px-8 py-4 transition-all print:hidden ${theme === 'dark' ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-slate-100'}`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           
           {/* Brand Logo Title */}
@@ -204,7 +232,7 @@ export default function App() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
             </div>
-            <h1 className="text-xl font-black tracking-tight text-slate-900 group-hover:text-indigo-600 transition-colors">
+            <h1 className={`text-xl font-black tracking-tight group-hover:text-indigo-600 transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
               AURA
             </h1>
           </div>
@@ -228,7 +256,7 @@ export default function App() {
             <button
               id="header_cart_trigger"
               onClick={() => setIsCartOpen(true)}
-              className="relative p-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-full transition-colors cursor-pointer"
+              className={`relative p-2.5 rounded-full transition-colors cursor-pointer ${theme === 'dark' ? 'bg-slate-800 hover:bg-slate-700 text-indigo-400' : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600'}`}
               title="Open Checkout Cart"
             >
               <ShoppingCart className="h-4.5 w-4.5" />
@@ -244,7 +272,7 @@ export default function App() {
               <button
                 id="header_dashboard_trigger"
                 onClick={() => setViewingDashboard(!viewingDashboard)}
-                className={`flex items-center gap-2 border rounded-full p-0.5 pr-2.5 bg-white cursor-pointer hover:shadow-xs hover:border-indigo-300 transition-all ${viewingDashboard ? 'border-indigo-600 ring-2 ring-indigo-600/20' : 'border-slate-200'}`}
+                className={`flex items-center gap-2 border rounded-full p-0.5 pr-2.5 cursor-pointer hover:shadow-xs hover:border-indigo-300 transition-all ${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} ${viewingDashboard ? 'border-indigo-600 ring-2 ring-indigo-600/20' : ''}`}
                 title="Your Personal Dashboard"
               >
                 <img
@@ -253,7 +281,7 @@ export default function App() {
                   className="h-6 w-6 rounded-full object-cover shrink-0"
                   referrerPolicy="no-referrer"
                 />
-                <span className="text-[11px] font-bold text-slate-700 hidden sm:inline">
+                <span className={`text-[11px] font-bold hidden sm:inline ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>
                   {currentUser.fullName.split(' ')[0]}
                 </span>
               </button>
@@ -261,7 +289,7 @@ export default function App() {
               <button
                 id="header_login_trigger"
                 onClick={() => setIsAuthOpen(true)}
-                className="px-5 py-2 bg-slate-900 text-white rounded-full font-bold text-xs shadow-lg hover:shadow-indigo-200 hover:bg-indigo-600 transition-all cursor-pointer flex items-center gap-1.5"
+                className={`px-5 py-2 rounded-full font-bold text-xs shadow-lg hover:shadow-indigo-200 hover:bg-indigo-600 transition-all cursor-pointer flex items-center gap-1.5 ${theme === 'dark' ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-white'}`}
               >
                 <UserIcon className="h-3.5 w-3.5" />
                 <span>Join / Login</span>
@@ -309,8 +337,8 @@ export default function App() {
                 onLogout={handleLogout}
                 products={products}
                 onUpdateProducts={handleUpdateProducts}
-                activeTab={dashboardTab}
-                onChangeTab={setDashboardTab}
+                theme={theme}
+                onToggleTheme={toggleTheme}
               />
             </motion.div>
           ) : (
@@ -399,7 +427,7 @@ export default function App() {
 
               {/* DYNAMIC COLLECTIONS AND COLLECTION FILTERS TABLE ROW */}
               <section id="catalog_filters_section" className="px-4 md:px-8">
-                <div className="max-w-7xl mx-auto flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between border-b border-slate-200/50 pb-5">
+                <div className={`max-w-7xl mx-auto flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between border-b pb-5 ${theme === 'dark' ? 'border-slate-800' : 'border-slate-200/50'}`}>
                   
                   {/* Category Pill select row */}
                   <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 sm:pb-0 w-full sm:w-auto scrollbar-hide">
@@ -412,7 +440,9 @@ export default function App() {
                         className={`px-4 py-2 rounded-full text-xs font-bold tracking-tight whitespace-nowrap transition-all cursor-pointer ${
                           activeCategory === cat
                             ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
-                            : 'bg-white border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50/50'
+                            : theme === 'dark'
+                              ? 'bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800'
+                              : 'bg-white border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50/50'
                         }`}
                       >
                         {cat}
@@ -427,12 +457,16 @@ export default function App() {
                       id="catalog_sorter"
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
-                      className="px-3 py-2 bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 rounded-xl text-xs font-bold text-slate-600 cursor-pointer transition-all hover:border-slate-350"
+                      className={`px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+                        theme === 'dark'
+                          ? 'bg-slate-900 border-slate-800 text-slate-205 text-slate-200'
+                          : 'bg-white border-slate-200 text-slate-600 hover:border-slate-350'
+                      }`}
                     >
-                      <option value="default">Default Catalog Sorting</option>
-                      <option value="price-low-high">MSRP Price: Low to High</option>
-                      <option value="price-high-low">MSRP Price: High to Low</option>
-                      <option value="rating">Customer Satisfaction Rating</option>
+                      <option value="default" className={theme === 'dark' ? 'bg-slate-900' : ''}>Default Catalog Sorting</option>
+                      <option value="price-low-high" className={theme === 'dark' ? 'bg-slate-900' : ''}>MSRP Price: Low to High</option>
+                      <option value="price-high-low" className={theme === 'dark' ? 'bg-slate-900' : ''}>MSRP Price: High to Low</option>
+                      <option value="rating" className={theme === 'dark' ? 'bg-slate-900' : ''}>Customer Satisfaction Rating</option>
                     </select>
                   </div>
                 </div>
@@ -482,7 +516,7 @@ export default function App() {
       </main>
 
       {/* FOOTER BLOCK CREDITS */}
-      <footer className="px-8 py-5 bg-white flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-slate-100 print:hidden mt-auto">
+      <footer className={`px-8 py-5 flex flex-col sm:flex-row justify-between items-center gap-4 border-t print:hidden mt-auto ${theme === 'dark' ? 'bg-slate-900 border-slate-800 text-slate-300' : 'bg-white border-slate-100 text-slate-600'}`}>
         <div className="flex space-x-6 text-[11px] font-bold text-slate-400 uppercase tracking-tight">
           <span>Terms</span>
           <span>Privacy</span>
@@ -490,7 +524,7 @@ export default function App() {
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Secure Checkout Enabled</span>
+          <span className="text-[11px] font-bold uppercase tracking-widest">Secure Checkout Enabled</span>
         </div>
       </footer>
 
@@ -525,7 +559,6 @@ export default function App() {
         onAddToCart={(product, qty, color, size) => {
           handleAddToCart(product, qty, color, size);
           setSelectedProduct(null);
-          setIsCartOpen(true);
         }}
       />
 
@@ -544,6 +577,21 @@ export default function App() {
           onCheckoutComplete={handleCheckoutWizardComplete}
         />
       )}
+
+      {/* 5. Hidden Administrative Clearance passcode prompt */}
+      <AdminPasscodeModal
+        isOpen={isAdminPasscodeOpen}
+        onClose={() => setIsAdminPasscodeOpen(false)}
+        onSuccess={() => setIsHiddenAdminOpen(true)}
+      />
+
+      {/* 6. Advanced Executive Admin System Command Centers panel */}
+      <HiddenAdminPanel
+        isOpen={isHiddenAdminOpen}
+        onClose={() => setIsHiddenAdminOpen(false)}
+        products={products}
+        onUpdateProducts={handleUpdateProducts}
+      />
 
     </div>
   );

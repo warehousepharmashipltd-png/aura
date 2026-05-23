@@ -181,15 +181,15 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }: Pr
               {/* Retail Price Panel */}
               <div className="flex items-baseline gap-2 mb-5">
                 <span className="text-2xl font-black text-slate-900">
-                  ${product.price}
+                  ৳{product.price}
                 </span>
                 {product.originalPrice && (
                   <>
                     <span className="text-sm text-slate-400 line-through font-medium">
-                      ${product.originalPrice}
+                      ৳{product.originalPrice}
                     </span>
                     <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 border border-rose-100/60 shadow-xs">
-                      SAVE ${product.originalPrice - product.price}
+                      SAVE ৳{product.originalPrice - product.price}
                     </span>
                   </>
                 )}

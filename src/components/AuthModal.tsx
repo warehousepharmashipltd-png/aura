@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Mail, Lock, User, Shield, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { X, Phone, Lock, User, Shield, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
 import { hashPassword } from '../utils/crypto';
 import { User as UserType } from '../types';
 
@@ -17,7 +17,7 @@ interface AuthModalProps {
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
   const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(''); // Internal storage for mobile number
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
@@ -36,7 +36,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
   if (!isOpen) return null;
 
   // Initialize Default Users in localStorage if they don't exist yet
-  // This allows instant testing with credentials
   const initializeDemoUsers = async () => {
     const existingUsers = localStorage.getItem('aura_users');
     if (!existingUsers) {
@@ -46,21 +45,41 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
       const initialUsers = [
         {
           id: 'u_admin',
-          email: 'admin@aura.com',
+          email: 'admin@auraboutique.com',
+          phoneNumber: '01711234567',
           fullName: 'Alexander Vance (Admin)',
           passwordHash: demoAdminHash,
           joinedDate: 'Oct 2025',
           role: 'admin',
-          avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=100&auto=format&fit=crop'
+          avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=100&auto=format&fit=crop',
+          deliveryAddress: {
+            fullName: 'Alexander Vance',
+            addressLine1: 'House 12, Road 5, Dhanmondi',
+            city: 'Dhaka',
+            state: 'Dhaka',
+            postalCode: '1209',
+            country: 'Bangladesh',
+            phone: '01711234567'
+          }
         },
         {
           id: 'u_guest',
-          email: 'guest@aura.com',
+          email: 'guest@auraboutique.com',
+          phoneNumber: '01822112233',
           fullName: 'Jane Doe',
           passwordHash: demoUserHash,
           joinedDate: 'Jan 2026',
           role: 'customer',
-          avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&auto=format&fit=crop'
+          avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&auto=format&fit=crop',
+          deliveryAddress: {
+            fullName: 'Jane Doe',
+            addressLine1: '68/A Lake Circus, Kalabagan',
+            city: 'Dhaka',
+            state: 'Dhaka',
+            postalCode: '1205',
+            country: 'Bangladesh',
+            phone: '01822112233'
+          }
         }
       ];
       localStorage.setItem('aura_users', JSON.stringify(initialUsers));
@@ -78,15 +97,24 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
       setLoading(true);
       setError('');
       
-      // Seed if missing
       await initializeDemoUsers();
 
       const usersString = localStorage.getItem('aura_users') || '[]';
       const users = JSON.parse(usersString);
       
-      const user = users.find((u: any) => u.email.toLowerCase() === email.toLowerCase().trim());
+      const cleanInput = email.trim();
+      const inputDigits = cleanInput.replace(/\D/g, '');
+
+      const user = users.find((u: any) => {
+        const uPhoneDigits = (u.phoneNumber || u.email || '').replace(/\D/g, '');
+        if (inputDigits && uPhoneDigits && uPhoneDigits === inputDigits) {
+          return true;
+        }
+        return u.email.toLowerCase() === cleanInput.toLowerCase();
+      });
+
       if (!user) {
-        throw new Error('No user profile found matching this email address.');
+        throw new Error('No user profile found matching this mobile number.');
       }
 
       const inputHash = await hashPassword(password);
@@ -101,7 +129,9 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
         fullName: user.fullName,
         avatarUrl: user.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop',
         joinedDate: user.joinedDate,
-        role: user.role
+        role: user.role,
+        phoneNumber: user.phoneNumber || user.email,
+        deliveryAddress: user.deliveryAddress
       };
 
       // Set user
@@ -140,40 +170,53 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
       const usersString = localStorage.getItem('aura_users') || '[]';
       const users = JSON.parse(usersString);
 
-      const checkDup = users.find((u: any) => u.email.toLowerCase() === email.toLowerCase().trim());
+      const cleanInput = email.trim();
+      const inputDigits = cleanInput.replace(/\D/g, '');
+      if (!inputDigits) {
+        throw new Error('Please enter a valid mobile phone number.');
+      }
+
+      const checkDup = users.find((u: any) => {
+        const uPhoneDigits = (u.phoneNumber || u.email || '').replace(/\D/g, '');
+        if (uPhoneDigits === inputDigits) {
+          return true;
+        }
+        return u.email.toLowerCase() === cleanInput.toLowerCase();
+      });
+
       if (checkDup) {
-        throw new Error('This email address is already registered.');
+        throw new Error('This mobile number is already registered.');
       }
 
       const hash = await hashPassword(password);
-      
-      // Simple format date
       const now = new Date();
       const formattedDate = now.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 
       // Create new user profile
       const newUserRecord = {
         id: 'u_' + Math.random().toString(36).substr(2, 9),
-        email: email.toLowerCase().trim(),
+        email: cleanInput,
+        phoneNumber: cleanInput,
         fullName: fullName.trim(),
         passwordHash: hash,
         joinedDate: formattedDate,
         role: 'customer',
-        avatarUrl: `https://images.unsplash.com/photo-${1500000000000 + Math.floor(Math.random() * 500000)}?q=80&w=100&auto=format&fit=crop`
+        avatarUrl: `https://images.unsplash.com/photo-${1500000000000 + Math.floor(Math.random() * 500000)}?q=80&w=100&auto=format&fit=crop`,
+        deliveryAddress: undefined
       };
 
-      // Push and save
       users.push(newUserRecord);
       localStorage.setItem('aura_users', JSON.stringify(users));
 
-      // Auto sign in user
       const authenticatedUser: UserType = {
         id: newUserRecord.id,
         email: newUserRecord.email,
         fullName: newUserRecord.fullName,
         avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop',
         joinedDate: newUserRecord.joinedDate,
-        role: 'customer'
+        role: 'customer',
+        phoneNumber: newUserRecord.phoneNumber,
+        deliveryAddress: undefined
       };
 
       localStorage.setItem('aura_current_user', JSON.stringify(authenticatedUser));
@@ -194,23 +237,23 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
   const handleForgotPassword = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
-      setError('Please provide your registered email address.');
+      setError('Please provide your registered mobile number.');
       return;
     }
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      setSuccess('Restoration pass-code link has been simulated to your inbox.');
+      setSuccess('A restoration pass-code link has been simulated to your mobile phone via SMS.');
     }, 800);
   };
 
   const autofillDemo = async (role: 'customer' | 'admin') => {
     await initializeDemoUsers();
     if (role === 'admin') {
-      setEmail('admin@aura.com');
+      setEmail('+1 (555) 999-9999');
       setPassword('admin123');
     } else {
-      setEmail('guest@aura.com');
+      setEmail('+1 (555) 019-2834');
       setPassword('guest123');
     }
   };
@@ -263,7 +306,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
             <p className="text-xs text-slate-455 text-slate-500 mt-1 mb-5 font-semibold">
               {mode === 'login' && 'Unlock order summaries, save coupons, and quick payouts.'}
               {mode === 'register' && 'Gain entry to members-only essentials.'}
-              {mode === 'forgot' && 'Enter your email to receive recovery parameters.'}
+              {mode === 'forgot' && 'Enter your mobile number to receive dynamic recovery parameters.'}
             </p>
 
             {/* Notifications */}
@@ -318,15 +361,15 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
 
               <div>
                 <label className="block text-xs font-bold text-slate-650 text-slate-700 mb-1" htmlFor="auth_email">
-                  Email Address
+                  Mobile Number
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <input
                     id="auth_email"
-                    type="email"
+                    type="text"
                     required
-                    placeholder="user@example.com"
+                    placeholder="e.g. +1 (555) 019-2834"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-10 pr-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600/15 focus:border-indigo-600 transition-colors bg-white font-bold text-slate-800"
@@ -378,7 +421,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                     <span>
                       {mode === 'login' && 'Log In to Profile'}
                       {mode === 'register' && 'Register Membership'}
-                      {mode === 'forgot' && 'Send recovery check'}
+                      {mode === 'forgot' && 'Send security check'}
                     </span>
                     <ArrowRight className="h-4 w-4" />
                   </>
@@ -402,7 +445,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                     <span className="font-extrabold text-slate-800 flex items-center gap-1">
                       👤 Demo Customer
                     </span>
-                    <span className="text-[10px] text-slate-400 font-medium">guest@aura.com / guest123</span>
+                    <span className="text-[10px] text-slate-400 font-medium">+1 (555) 019-2834 / guest123</span>
                   </button>
                   <button
                     id="autofill_admin"
@@ -413,7 +456,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
                     <span className="font-extrabold text-slate-800 flex items-center gap-1">
                       🛡️ Demo Admin
                     </span>
-                    <span className="text-[10px] text-slate-400 font-medium">admin@aura.com / admin123</span>
+                    <span className="text-[10px] text-slate-400 font-medium">+1 (555) 999-9999 / admin123</span>
                   </button>
                 </div>
               </div>
